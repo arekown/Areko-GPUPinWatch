@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/gpw-core", "crates/gpw-sources", "crates/gpw-daemon"]
+members = ["crates/gpw-core", "crates/gpw-sources", "crates/gpw-daemon", "app/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"
