@@ -28,7 +28,7 @@ the window is only the display.
 
 | Alarm | Dark | Light |
 |---|---|---|
-| ![Alarm](docs/screenshots/alarm-areko.png) | ![Dark](docs/screenshots/settings-dark.png) | ![Light](docs/screenshots/settings-light.png) |
+| ![Alarm](docs/screenshots/alarm-areko.png) | ![Dark](docs/screenshots/overview-dark.png) | ![Light](docs/screenshots/overview-light.png) |
 
 ## Supported hardware
 
