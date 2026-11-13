@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="de" data-theme="areko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Areko GPUPinWatch – Entwurf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;600&family=Noto+Sans+JP:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------ themes */
+:root, [data-theme="light"] {
+  --bg:#eef1f5; --win:#ffffff; --panel:#f6f8fb; --line:#d9dee6; --txt:#1b2230; --dim:#6b7686; --acc:#2563eb;
+  --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --track:#e3e8ef; --pinTxt:#1b2230; --plug:#c9d1dc; --plugBg:#f1f4f8;
+  --head:'Inter', system-ui, sans-serif; --body:'Inter', system-ui, sans-serif; --mono:ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --radius:12px; --shadow:0 18px 50px rgba(20,30,50,.14); --ls:0; --case:none;
+}
+[data-theme="dark"] {
+  --bg:#0d1117; --win:#161b22; --panel:#1c222b; --line:#2b333f; --txt:#e6edf3; --dim:#8b949e; --acc:#58a6ff;
+  --ok:#3fb950; --warn:#d29922; --bad:#f85149; --track:#2b333f; --pinTxt:#e6edf3; --plug:#3a4452; --plugBg:#11161d;
+  --shadow:0 18px 50px rgba(0,0,0,.5);
+}
+[data-theme="areko"] {
+  --bg:#03050a; --win:#06080f; --panel:#0a0e1a; --line:rgba(5,217,232,.28); --txt:#cfeef2; --dim:#5f7d86; --acc:#05d9e8;
+  --ok:#00ff9f; --warn:#f9f002; --bad:#ff2a6d; --track:rgba(5,217,232,.12); --pinTxt:#e8fbff; --plug:#0792a0; --plugBg:#050a12;
+  --head:'Orbitron', sans-serif; --body:'Rajdhani', sans-serif; --mono:'Share Tech Mono', monospace;
+  --radius:0px; --shadow:0 0 0 1px rgba(5,217,232,.25), 0 0 40px rgba(5,217,232,.08); --ls:.12em; --case:uppercase;
+}
+html[lang="zh"] { --body:'Noto Sans SC', 'Inter', sans-serif; }
+html[lang="ja"] { --body:'Noto Sans JP', 'Inter', sans-serif; }
+html[lang="zh"][data-theme="areko"], html[lang="ja"][data-theme="areko"] { --case:none; }
+
+* { box-sizing:border-box; }
+html, body { margin:0; background:var(--bg); color:var(--txt); font-family:var(--body); }
+body { min-height:100vh; padding:16px; }
+[data-theme="areko"] body {
+  background:
+    linear-gradient(rgba(7,146,160,.05) 1px, transparent 1px) 0 0/24px 24px,
+    linear-gradient(90deg, rgba(7,146,160,.05) 1px, transparent 1px) 0 0/24px 24px, var(--bg);
+}
+
+/* ------------------------------------------------------------------ draft toolbar (not part of the tool) */
+.draft { max-width:1180px; margin:0 auto 14px; display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center;
+  font:13px var(--mono); color:var(--dim); }
+.draft b { color:var(--txt); font-weight:600; margin-right:6px; }
+.seg { display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+[data-theme="areko"] .seg { border-radius:0; }
+.seg button { background:transparent; color:var(--dim); border:0; padding:5px 10px; font:inherit; cursor:pointer; }
+.seg button.on { background:var(--acc); color:var(--win); }
+.draft .tag { margin-left:auto; opacity:.75; }
+
+/* ------------------------------------------------------------------ desktop mock: tray + toast */
+.desk { max-width:1180px; margin:0 auto; position:relative; }
+.tray { display:flex; justify-content:flex-end; align-items:center; gap:10px; height:34px; padding:0 12px; margin-bottom:12px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); font:12px var(--mono); color:var(--dim); }
+.tray .ico { width:22px; height:22px; display:grid; place-items:center; border-radius:6px; }
+.tray .ico svg { width:18px; height:18px; }
+.tray .clock { color:var(--txt); }
+.toast { position:absolute; right:0; top:46px; width:340px; z-index:5; background:var(--win); border:1px solid var(--line);
+  border-left:4px solid var(--warn); border-radius:var(--radius); box-shadow:var(--shadow); padding:12px 14px; display:none; }
+.toast.alarm { border-left-color:var(--bad); }
+.toast.show { display:block; animation:pop .25s ease-out; }
+@keyframes pop { from { transform:translateY(-6px); opacity:0 } }
+.toast h4 { margin:0 0 4px; font:700 14px var(--head); letter-spacing:var(--ls); text-transform:var(--case); }
+.toast p { margin:0; font-size:14px; color:var(--dim); line-height:1.35; }
+.toast .app { font:11px var(--mono); color:var(--dim); margin-bottom:6px; }
+
+/* ------------------------------------------------------------------ window */
+.win { max-width:1180px; margin:0 auto; background:var(--win); border:1px solid var(--line); border-radius:var(--radius);
+  box-shadow:var(--shadow); overflow:hidden; position:relative; }
+[data-theme="areko"] .win::before, [data-theme="areko"] .win::after { content:""; position:absolute; width:26px; height:26px; pointer-events:none; }
+[data-theme="areko"] .win::before { left:0; top:0; border-left:2px solid #05d9e8; border-top:2px solid #05d9e8; }
+[data-theme="areko"] .win::after { right:0; bottom:0; border-right:2px solid #ff2a6d; border-bottom:2px solid #ff2a6d; }
+.bar { display:flex; align-items:center; gap:14px; padding:14px 18px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.logo { display:flex; align-items:center; gap:10px; }
+.logo svg { width:28px; height:28px; color:var(--acc); }
+.logo h1 { margin:0; font:700 19px var(--head); letter-spacing:var(--ls); }
+.logo h1 .brand { color:var(--acc); }
+.logo small { display:block; font:12px var(--mono); color:var(--dim); letter-spacing:.04em; }
+.pill { display:inline-flex; align-items:center; gap:7px; padding:5px 12px; border-radius:999px; font:600 13px var(--body);
+  letter-spacing:var(--ls); text-transform:var(--case); border:1px solid currentColor; }
+[data-theme="areko"] .pill { border-radius:0; }
+.pill i { width:8px; height:8px; border-radius:50%; background:currentColor; }
+.pill.ok { color:var(--ok); } .pill.thr { color:var(--warn); } .pill.alarm { color:var(--bad); }
+.pill.alarm i, .pill.thr i { animation:blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity:.2 } }
+.svc { font:12px var(--mono); color:var(--dim); margin-left:auto; }
+.tabs { display:flex; gap:4px; padding:0 18px; border-bottom:1px solid var(--line); }
+.tabs button { background:none; border:0; border-bottom:2px solid transparent; padding:11px 12px; color:var(--dim); cursor:pointer;
+  font:600 14px var(--body); letter-spacing:var(--ls); text-transform:var(--case); }
+.tabs button.on { color:var(--txt); border-bottom-color:var(--acc); }
+.page { padding:18px; display:none; }
+.page.on { display:block; }
+
+/* ------------------------------------------------------------------ overview */
+.cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(330px, 1fr)); gap:16px; }
+.card { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; position:relative; }
+.card.thr { border-color:var(--warn); box-shadow:0 0 0 1px var(--warn) inset; }
+.card.alarm { border-color:var(--bad); box-shadow:0 0 0 1px var(--bad) inset; animation:redpulse 1s ease-in-out infinite; }
+@keyframes redpulse { 50% { box-shadow:0 0 0 1px var(--bad) inset, 0 0 24px color-mix(in srgb, var(--bad) 35%, transparent); } }
+.chead { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+.chead h3 { margin:0; font:700 16px var(--head); letter-spacing:var(--ls); }
+.chead .sub { font:12px var(--mono); color:var(--dim); margin-top:3px; }
+.src { font:12px var(--mono); padding:3px 8px; border:1px solid var(--line); border-radius:6px; color:var(--dim); white-space:nowrap; }
+[data-theme="areko"] .src { border-radius:0; color:var(--acc); }
+.plugwrap { margin:16px 0 10px; display:flex; justify-content:center; }
+.plugwrap svg { width:100%; max-width:420px; height:auto; overflow:visible; }
+.stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-top:6px; }
+.stat { background:var(--win); border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+[data-theme="areko"] .stat { border-radius:0; }
+.stat span { display:block; font-size:12px; color:var(--dim); letter-spacing:var(--ls); text-transform:var(--case); }
+.stat b { font:600 18px var(--mono); }
+.stat b.warn { color:var(--warn); } .stat b.bad { color:var(--bad); }
+.histo { margin-top:12px; }
+.histo .lbl { font-size:12px; color:var(--dim); letter-spacing:var(--ls); text-transform:var(--case); margin-bottom:4px; display:flex; justify-content:space-between; }
+.histo svg { width:100%; height:64px; display:block; background:var(--win); border:1px solid var(--line); border-radius:8px; }
+[data-theme="areko"] .histo svg { border-radius:0; }
+.banner { display:none; margin-top:12px; padding:10px 12px; border-radius:8px; font-size:15px; align-items:center; gap:10px; }
+.card.thr .banner { display:flex; background:color-mix(in srgb, var(--warn) 14%, transparent); color:var(--txt); border:1px solid var(--warn); }
+.card.alarm .banner { display:flex; background:color-mix(in srgb, var(--bad) 16%, transparent); color:var(--txt); border:1px solid var(--bad); }
+.banner .grow { flex:1; }
+.btn { background:var(--acc); color:var(--win); border:0; border-radius:8px; padding:7px 14px; font:600 13px var(--body); cursor:pointer;
+  letter-spacing:var(--ls); text-transform:var(--case); }
+[data-theme="areko"] .btn, [data-theme="areko"] .banner { border-radius:0; }
+.card.alarm .btn { display:none; }
+.foot { margin-top:14px; font:12px var(--mono); color:var(--dim); display:flex; justify-content:space-between; }
+
+/* ------------------------------------------------------------------ settings */
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit, minmax(330px, 1fr)); gap:16px; }
+.box { background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+.box h3 { margin:0 0 12px; font:700 15px var(--head); letter-spacing:var(--ls); display:flex; align-items:center; gap:8px; }
+.box h3 i { width:10px; height:10px; border-radius:50%; }
+.row { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:15px; }
+.row:first-of-type { border-top:0; }
+.row label { flex:1; }
+.row input[type=range] { width:150px; accent-color:var(--acc); }
+.row .val { font:15px var(--mono); min-width:64px; text-align:right; }
+.row select { background:var(--win); color:var(--txt); border:1px solid var(--line); border-radius:6px; padding:4px 6px; font:inherit; }
+.sw { width:40px; height:22px; border-radius:11px; background:var(--track); position:relative; cursor:pointer; border:1px solid var(--line); }
+.sw::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:var(--dim); transition:.15s; }
+.sw.on { background:color-mix(in srgb, var(--acc) 40%, transparent); }
+.sw.on::after { left:20px; background:var(--acc); }
+[data-theme="areko"] .sw, [data-theme="areko"] .sw::after { border-radius:0; }
+.dev { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--line); font-size:15px; }
+.dev:first-of-type { border-top:0; }
+.dev .dot { width:9px; height:9px; border-radius:50%; background:var(--ok); }
+.dev .dot.off { background:var(--dim); opacity:.5; }
+.dev .grow { flex:1; }
+.dev small { font:12px var(--mono); color:var(--dim); }
+
+.about .val { font-size:14px; text-align:right; color:var(--txt); }
+.about a.val { color:var(--acc); text-decoration:none; word-break:break-all; }
+.about a.val:hover { text-decoration:underline; }
+.about h3 .brand, .about .brand { color:var(--acc); }
+.note { margin:10px 0 0; font-size:14px; line-height:1.45; color:var(--dim); }
+.note.warn { color:var(--txt); border-left:3px solid var(--warn); padding-left:10px; }
+.cred { margin:6px 0 0; font:13px var(--mono); line-height:1.6; color:var(--dim); }
+.cred small { color:var(--dim); }
+
+/* ------------------------------------------------------------------ events */
+table.ev { width:100%; border-collapse:collapse; font-size:15px; }
+table.ev td { padding:9px 8px; border-top:1px solid var(--line); vertical-align:top; }
+table.ev tr:first-child td { border-top:0; }
+table.ev td.t { font:13px var(--mono); color:var(--dim); white-space:nowrap; width:1%; }
+table.ev td.k { white-space:nowrap; width:1%; }
+.lvl { font:12px var(--mono); padding:2px 7px; border-radius:5px; border:1px solid currentColor; }
+.lvl.i { color:var(--acc); } .lvl.w { color:var(--warn); } .lvl.b { color:var(--bad); }
+
+@media (max-width:640px) { .stats { grid-template-columns:repeat(2, 1fr); } .svc { margin-left:0; width:100%; } }
+</style>
+</head>
+<body>
+
+<!-- Draft controls: only for looking at the draft, not part of Areko GPUPinWatch -->
+<div class="draft">
+  <span><b>Design</b><span class="seg" id="segTheme"></span></span>
+  <span><b>Sprache</b><span class="seg" id="segLang"></span></span>
+  <span><b>Zustand</b><span class="seg" id="segState"></span></span>
+  <span><b>GPUs im PC (Vorschau, im Programm automatisch)</b><span class="seg" id="segCount"></span></span>
+  <span class="tag">NUR ENTWURF · DIESE LEISTE GIBT ES IM PROGRAMM NICHT</span>
+</div>
+
+<div class="desk">
+  <div class="tray"><span id="trayIco" class="ico"></span><span class="clock" id="clock">21:47</span></div>
+  <div class="toast" id="toast"><div class="app">Areko GPUPinWatch</div><h4 id="toastT"></h4><p id="toastP"></p></div>
+
+  <div class="win">
+    <div class="bar">
+      <div class="logo">
+        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="9" width="24" height="14" rx="2"/>
+          <path d="M12 9V5h8v4"/><circle cx="10" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><circle cx="22" cy="16" r="2"/><path d="M16 23v5"/></svg>
+        <div><h1><span class="brand">Areko</span> GPUPinWatch</h1><small data-t="appSub"></small></div>
+      </div>
+      <span class="pill" id="pill"><i></i><span id="pillT"></span></span>
+      <span class="svc" id="svc"></span>
+    </div>
+    <div class="tabs" id="tabs">
+      <button data-p="ov" class="on" data-t="tabOv"></button>
+      <button data-p="set" data-t="tabSet"></button>
+      <button data-p="ev" data-t="tabEv"></button>
+      <button data-p="info" data-t="tabInfo"></button>
+    </div>
+
+    <div class="page on" id="p-ov">
+      <div class="cards" id="cards"></div>
+      <div class="foot"><span id="lastRead"></span><span>12V-2x6 · 9,2 A / Pin</span></div>
+    </div>
+
+    <div class="page" id="p-set">
+      <div class="grid2">
+        <div class="box">
+          <h3><i style="background:var(--warn)"></i><span data-t="stage1"></span></h3>
+          <div class="row"><label data-t="from"></label><input type="range" min="7" max="9.2" step="0.1" value="8.5" data-v="v1"><span class="val" id="v1">8.5 A</span></div>
+          <div class="row"><label data-t="for"></label><select><option>0,5 s</option><option selected>1 s</option><option>2 s</option><option>5 s</option></select></div>
+          <div class="row"><label data-t="to"></label><select><option>350 W</option><option selected>400 W</option><option>450 W</option><option>75 %</option></select></div>
+        </div>
+        <div class="box">
+          <h3><i style="background:var(--bad)"></i><span data-t="stage2"></span></h3>
+          <div class="row"><label data-t="from"></label><input type="range" min="8.5" max="10" step="0.1" value="9.2" data-v="v2"><span class="val" id="v2">9.2 A</span></div>
+          <div class="row"><label data-t="for"></label><select><option>0,5 s</option><option>1 s</option><option selected>1,5 s</option><option>3 s</option></select></div>
+          <div class="row"><label data-t="action"></label><select id="actSel"></select></div>
+        </div>
+        <div class="box">
+          <h3 data-t="alerts"></h3>
+          <div class="row"><label data-t="desk"></label><span class="sw on"></span></div>
+          <div class="row"><label data-t="sound"></label><span class="sw on"></span></div>
+          <div class="row"><label data-t="auto"></label><span class="sw on"></span></div>
+          <div class="row"><label data-t="rate"></label><select><option>1 Hz</option><option selected>2 Hz</option><option>4 Hz</option></select></div>
+        </div>
+        <div class="box">
+          <h3 data-t="sources"></h3>
+          <div id="devs"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page" id="p-ev"><div class="box"><table class="ev" id="evt"></table></div></div>
+
+    <div class="page" id="p-info">
+      <div class="grid2">
+        <div class="box about">
+          <h3><span class="brand">Areko</span>&nbsp;GPUPinWatch</h3>
+          <div class="row"><label data-t="version"></label><span class="val">0.1.0</span></div>
+          <div class="row"><label data-t="author"></label><span class="val">Areko</span></div>
+          <div class="row"><label data-t="repo"></label><a class="val" href="https://github.com/arekown/Areko-GPUPinWatch" target="_blank" rel="noopener">github.com/arekown/Areko-GPUPinWatch</a></div>
+          <div class="row"><label data-t="license"></label><span class="val">PolyForm Noncommercial 1.0.0</span></div>
+          <p class="note" data-t="licenseTxt"></p>
+        </div>
+        <div class="box about">
+          <h3 data-t="credits"></h3>
+          <p class="note" data-t="creditsTxt"></p>
+          <p class="cred">vhpwr-guard · LACT · LibreHardwareMonitor · PinSentinel · wireview-pro-ii · wireview-monitor · meltalarm · psutop · msi-psu-monitor</p>
+          <p class="note warn" data-t="disclaimer"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+// Areko GPUPinWatch draft: theme, language and state are switchable; pin values are simulated (2 Hz like the service).
+const I18N = {
+  de: { name:'Deutsch', tabInfo:'Info', version:'Version', author:'Autor', repo:'Quellcode', license:'Lizenz', licenseTxt:'Kostenlos für private und nicht-kommerzielle Nutzung. Kommerzielle Nutzung nur mit Erlaubnis des Autors.', credits:'Danke', creditsTxt:'Ein Dankeschön für die Protokoll-Vorarbeit an:', disclaimer:'Areko GPUPinWatch ersetzt keinen korrekt eingesteckten Stecker. Masse-Pins (GND) werden von keinem Sensor gemessen.', appSub:'GPU-Stecker-Wächter', tabOv:'Übersicht', tabSet:'Einstellungen', tabEv:'Ereignisse',
+    ok:'Geschützt', thr:'Gedrosselt', alarm:'Alarm', svc:'Dienst aktiv · {hz} Hz · {n} Quellen',
+    srcCard:'Sensor auf der Karte', srcWv:'WireView Pro II', srcPsu:'MSI-Netzteil',
+    total:'Gesamt', power:'Leistung', spread:'Spreizung', limit:'Grenze', hist:'Höchster Pin · 60 s',
+    bThr:'Auf {w} W gedrosselt – Pin {p} lag bei {a} A', bAlarm:'Pin {p}: {a} A trotz Drosselung – System wird heruntergefahren',
+    release:'Freigeben', last:'Letzte Messung vor {s} s', stage1:'Stufe 1 · Drosseln', stage2:'Stufe 2 · Notabschaltung',
+    from:'Pin-Strom ab', for:'länger als', to:'Leistungsgrenze auf', action:'Aktion', acts:['Herunterfahren', 'Nur Alarm'],
+    alerts:'Benachrichtigungen', desk:'Desktop-Alarm', sound:'Warnton', auto:'Mit dem System starten', rate:'Abfragerate',
+    sources:'Erkannte Quellen', found:'erkannt', notFound:'nicht gefunden',
+    tThr:'GPU gedrosselt', tAlarm:'Stecker-Alarm – Herunterfahren',
+    eStart:'Dienst gestartet', eFound:'{s} erkannt', eThr:'Auf {w} W gedrosselt (Pin {p} {a} A)', eRel:'Freigegeben, Grenze wieder {w} W',
+    eAlarm:'Pin {p} {a} A trotz Drosselung – Herunterfahren' },
+  en: { name:'English', tabInfo:'About', version:'Version', author:'Author', repo:'Source code', license:'License', licenseTxt:'Free for personal and non-commercial use. Commercial use only with the author’s permission.', credits:'Thanks', creditsTxt:'Thank you for the protocol groundwork to:', disclaimer:'Areko GPUPinWatch does not replace a properly seated connector. Ground pins (GND) are not measured by any sensor.', appSub:'GPU connector guard', tabOv:'Overview', tabSet:'Settings', tabEv:'Events',
+    ok:'Protected', thr:'Throttled', alarm:'Alarm', svc:'Service running · {hz} Hz · {n} sources',
+    srcCard:'On-card sensor', srcWv:'WireView Pro II', srcPsu:'MSI PSU',
+    total:'Total', power:'Power', spread:'Spread', limit:'Limit', hist:'Highest pin · 60 s',
+    bThr:'Throttled to {w} W – pin {p} was at {a} A', bAlarm:'Pin {p}: {a} A despite throttling – shutting down',
+    release:'Release', last:'Last reading {s} s ago', stage1:'Stage 1 · Throttle', stage2:'Stage 2 · Emergency shutdown',
+    from:'Pin current above', for:'for longer than', to:'Set power limit to', action:'Action', acts:['Shut down', 'Alarm only'],
+    alerts:'Notifications', desk:'Desktop alarm', sound:'Warning sound', auto:'Start with system', rate:'Polling rate',
+    sources:'Detected sources', found:'detected', notFound:'not found',
+    tThr:'GPU throttled', tAlarm:'Connector alarm – shutting down',
+    eStart:'Service started', eFound:'{s} detected', eThr:'Throttled to {w} W (pin {p} {a} A)', eRel:'Released, limit back to {w} W',
+    eAlarm:'Pin {p} {a} A despite throttling – shutdown' },
+  it: { name:'Italiano', tabInfo:'Info', version:'Versione', author:'Autore', repo:'Codice sorgente', license:'Licenza', licenseTxt:'Gratuito per uso personale e non commerciale. Uso commerciale solo con il permesso dell’autore.', credits:'Grazie', creditsTxt:'Grazie per il lavoro preliminare sui protocolli a:', disclaimer:'Areko GPUPinWatch non sostituisce un connettore inserito correttamente. I pin di massa (GND) non sono misurati da alcun sensore.', appSub:'Guardia del connettore GPU', tabOv:'Panoramica', tabSet:'Impostazioni', tabEv:'Eventi',
+    ok:'Protetto', thr:'Limitato', alarm:'Allarme', svc:'Servizio attivo · {hz} Hz · {n} sorgenti',
+    srcCard:'Sensore sulla scheda', srcWv:'WireView Pro II', srcPsu:'Alimentatore MSI',
+    total:'Totale', power:'Potenza', spread:'Squilibrio', limit:'Limite', hist:'Pin più alto · 60 s',
+    bThr:'Limitata a {w} W – il pin {p} era a {a} A', bAlarm:'Pin {p}: {a} A nonostante il limite – spegnimento in corso',
+    release:'Sblocca', last:'Ultima lettura {s} s fa', stage1:'Livello 1 · Limitare', stage2:'Livello 2 · Spegnimento di emergenza',
+    from:'Corrente del pin oltre', for:'per più di', to:'Limite di potenza a', action:'Azione', acts:['Spegni', 'Solo allarme'],
+    alerts:'Notifiche', desk:'Allarme sul desktop', sound:'Suono di avviso', auto:'Avvia con il sistema', rate:'Frequenza di lettura',
+    sources:'Sorgenti rilevate', found:'rilevato', notFound:'non trovato',
+    tThr:'GPU limitata', tAlarm:'Allarme connettore – spegnimento',
+    eStart:'Servizio avviato', eFound:'{s} rilevato', eThr:'Limitata a {w} W (pin {p} {a} A)', eRel:'Sbloccata, limite di nuovo {w} W',
+    eAlarm:'Pin {p} {a} A nonostante il limite – spegnimento' },
+  es: { name:'Español', tabInfo:'Info', version:'Versión', author:'Autor', repo:'Código fuente', license:'Licencia', licenseTxt:'Gratis para uso personal y no comercial. Uso comercial solo con permiso del autor.', credits:'Gracias', creditsTxt:'Gracias por el trabajo previo en los protocolos a:', disclaimer:'Areko GPUPinWatch no sustituye un conector bien insertado. Los pines de masa (GND) no los mide ningún sensor.', appSub:'Guardián del conector GPU', tabOv:'Resumen', tabSet:'Ajustes', tabEv:'Eventos',
+    ok:'Protegido', thr:'Limitado', alarm:'Alarma', svc:'Servicio activo · {hz} Hz · {n} fuentes',
+    srcCard:'Sensor en la tarjeta', srcWv:'WireView Pro II', srcPsu:'Fuente MSI',
+    total:'Total', power:'Potencia', spread:'Desequilibrio', limit:'Límite', hist:'Pin más alto · 60 s',
+    bThr:'Limitada a {w} W – el pin {p} estaba en {a} A', bAlarm:'Pin {p}: {a} A pese al límite – apagando el sistema',
+    release:'Liberar', last:'Última lectura hace {s} s', stage1:'Nivel 1 · Limitar', stage2:'Nivel 2 · Apagado de emergencia',
+    from:'Corriente del pin desde', for:'durante más de', to:'Límite de potencia a', action:'Acción', acts:['Apagar', 'Solo alarma'],
+    alerts:'Notificaciones', desk:'Alarma en el escritorio', sound:'Sonido de aviso', auto:'Iniciar con el sistema', rate:'Frecuencia de lectura',
+    sources:'Fuentes detectadas', found:'detectado', notFound:'no encontrado',
+    tThr:'GPU limitada', tAlarm:'Alarma del conector – apagando',
+    eStart:'Servicio iniciado', eFound:'{s} detectado', eThr:'Limitada a {w} W (pin {p} {a} A)', eRel:'Liberada, límite de nuevo {w} W',
+    eAlarm:'Pin {p} {a} A pese al límite – apagado' },
+  pt: { name:'Português', tabInfo:'Sobre', version:'Versão', author:'Autor', repo:'Código-fonte', license:'Licença', licenseTxt:'Gratuito para uso pessoal e não comercial. Uso comercial só com permissão do autor.', credits:'Agradecimentos', creditsTxt:'Obrigado pelo trabalho prévio nos protocolos a:', disclaimer:'O Areko GPUPinWatch não substitui um conector bem encaixado. Os pinos de terra (GND) não são medidos por nenhum sensor.', appSub:'Guardião do conector da GPU', tabOv:'Visão geral', tabSet:'Configurações', tabEv:'Eventos',
+    ok:'Protegido', thr:'Limitado', alarm:'Alarme', svc:'Serviço ativo · {hz} Hz · {n} fontes',
+    srcCard:'Sensor na placa', srcWv:'WireView Pro II', srcPsu:'Fonte MSI',
+    total:'Total', power:'Potência', spread:'Desequilíbrio', limit:'Limite', hist:'Pino mais alto · 60 s',
+    bThr:'Limitada a {w} W – o pino {p} estava em {a} A', bAlarm:'Pino {p}: {a} A apesar do limite – desligando o sistema',
+    release:'Liberar', last:'Última leitura há {s} s', stage1:'Nível 1 · Limitar', stage2:'Nível 2 · Desligamento de emergência',
+    from:'Corrente do pino acima de', for:'por mais de', to:'Limite de potência para', action:'Ação', acts:['Desligar', 'Só alarme'],
+    alerts:'Notificações', desk:'Alarme na área de trabalho', sound:'Som de aviso', auto:'Iniciar com o sistema', rate:'Taxa de leitura',
+    sources:'Fontes detectadas', found:'detectado', notFound:'não encontrado',
+    tThr:'GPU limitada', tAlarm:'Alarme do conector – desligando',
+    eStart:'Serviço iniciado', eFound:'{s} detectado', eThr:'Limitada a {w} W (pino {p} {a} A)', eRel:'Liberada, limite de volta a {w} W',
+    eAlarm:'Pino {p} {a} A apesar do limite – desligamento' },
+  zh: { name:'中文', tabInfo:'关于', version:'版本', author:'作者', repo:'源代码', license:'许可证', licenseTxt:'个人及非商业用途免费。商业用途须经作者许可。', credits:'致谢', creditsTxt:'感谢以下项目在通信协议方面的前期工作：', disclaimer:'Areko GPUPinWatch 不能代替正确插好的接口。接地针脚（GND）没有任何传感器测量。', appSub:'显卡供电接口守护', tabOv:'概览', tabSet:'设置', tabEv:'事件',
+    ok:'已保护', thr:'已降功率', alarm:'警报', svc:'服务运行中 · {hz} Hz · {n} 个数据源',
+    srcCard:'显卡板载传感器', srcWv:'WireView Pro II', srcPsu:'MSI 电源',
+    total:'总电流', power:'功率', spread:'偏差', limit:'功率上限', hist:'最高针脚 · 60 秒',
+    bThr:'已降至 {w} W – 针脚 {p} 为 {a} A', bAlarm:'针脚 {p}：降功率后仍为 {a} A – 正在关机',
+    release:'解除', last:'上次读数 {s} 秒前', stage1:'第一级 · 降功率', stage2:'第二级 · 紧急关机',
+    from:'针脚电流超过', for:'持续超过', to:'功率上限设为', action:'动作', acts:['关机', '仅警报'],
+    alerts:'通知', desk:'桌面警报', sound:'警告音', auto:'开机自动启动', rate:'读取频率',
+    sources:'已识别的数据源', found:'已识别', notFound:'未找到',
+    tThr:'显卡已降功率', tAlarm:'接口警报 – 正在关机',
+    eStart:'服务已启动', eFound:'已识别 {s}', eThr:'已降至 {w} W（针脚 {p} {a} A）', eRel:'已解除，上限恢复为 {w} W',
+    eAlarm:'针脚 {p} 降功率后仍为 {a} A – 关机' },
+  ja: { name:'日本語', tabInfo:'情報', version:'バージョン', author:'作者', repo:'ソースコード', license:'ライセンス', licenseTxt:'個人および非商用利用は無料。商用利用は作者の許可が必要です。', credits:'謝辞', creditsTxt:'プロトコル解析の先行作業に感謝します：', disclaimer:'Areko GPUPinWatch は正しく挿さったコネクタの代わりにはなりません。グラウンドピン（GND）はどのセンサーでも測定されません。', appSub:'GPU電源コネクタ監視', tabOv:'概要', tabSet:'設定', tabEv:'イベント',
+    ok:'保護中', thr:'制限中', alarm:'警告', svc:'サービス稼働中 · {hz} Hz · ソース {n} 件',
+    srcCard:'カード上のセンサー', srcWv:'WireView Pro II', srcPsu:'MSI 電源',
+    total:'合計', power:'電力', spread:'ばらつき', limit:'電力上限', hist:'最大ピン · 60 秒',
+    bThr:'{w} W に制限 – ピン {p} が {a} A', bAlarm:'ピン {p}：制限後も {a} A – シャットダウンします',
+    release:'解除', last:'最終測定 {s} 秒前', stage1:'段階 1 · 電力制限', stage2:'段階 2 · 緊急シャットダウン',
+    from:'ピン電流が次を超える', for:'継続時間', to:'電力上限を', action:'動作', acts:['シャットダウン', '警告のみ'],
+    alerts:'通知', desk:'デスクトップ警告', sound:'警告音', auto:'システム起動時に開始', rate:'読み取り頻度',
+    sources:'検出されたソース', found:'検出', notFound:'未検出',
+    tThr:'GPU を制限しました', tAlarm:'コネクタ警告 – シャットダウン',
+    eStart:'サービス開始', eFound:'{s} を検出', eThr:'{w} W に制限（ピン {p} {a} A）', eRel:'解除、上限を {w} W に戻しました',
+    eAlarm:'ピン {p} が制限後も {a} A – シャットダウン' },
+};
+const THEMES = [['light', 'Light'], ['dark', 'Dark'], ['areko', 'Areko']];
+const STATES = [['ok', 'Normal'], ['thr', 'Gedrosselt'], ['alarm', 'Alarm']];
+const WARN = 8.5, CRIT = 9.2;
+const CARDS = [
+  { id:'GPU 0', model:'ROG Astral RTX 5090 OC', bus:'02:00.0', src:'srcCard', base:[7.2, 7.4, 7.3, 7.1, 7.0, 7.4], limit:600 },
+  { id:'GPU 1', model:'GeForce RTX 5090 Founders Edition', bus:'04:00.0', src:'srcWv', base:[6.9, 7.1, 7.0, 7.2, 6.8, 7.0], limit:575 },
+  { id:'GPU 2', model:'MSI RTX 5090 SUPRIM', bus:'05:00.0', src:'srcPsu', base:[7.0, 6.9, 7.1, 7.0, 7.2, 6.9], limit:600 },
+  { id:'GPU 3', model:'ROG Astral LC RTX 5090', bus:'06:00.0', src:'srcCard', base:[7.3, 7.2, 7.4, 7.1, 7.2, 7.3], limit:600 },
+];
+const S = { theme:'areko', lang:'de', state:'ok', count:2, tab:'ov', hist:CARDS.map(() => []), vals:CARDS.map(() => []), age:0.2 };
+
+const tr = (k, p) => { let s = (I18N[S.lang][k] ?? I18N.de[k]); if (p) for (const n in p) s = s.replace('{' + n + '}', p[n]); return s; };
+const fmtA = v => v.toFixed(2);
+const nf = v => S.lang === 'de' || S.lang === 'it' || S.lang === 'es' || S.lang === 'pt' ? String(v).replace('.', ',') : String(v);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function seg(el, items, key, on) {
+  el.innerHTML = '';
+  for (const [v, label] of items) {
+    const b = document.createElement('button');
+    b.textContent = label; if (S[key] === v) b.className = 'on';
+    b.onclick = () => { S[key] = v; on(); };
+    el.appendChild(b);
+  }
+}
+function drawToolbar() {
+  seg(document.getElementById('segTheme'), THEMES, 'theme', applyAll);
+  seg(document.getElementById('segLang'), Object.keys(I18N).map(k => [k, I18N[k].name]), 'lang', applyAll);
+  seg(document.getElementById('segState'), STATES, 'state', () => { simulate(true); applyAll(); });
+  seg(document.getElementById('segCount'), [[1, '1'], [2, '2'], [3, '3'], [4, '4']], 'count', applyAll);
+}
+
+// ------------------------------------------------------------------ simulation
+// card 0 is the troubled one in the "thr"/"alarm" demo states (pin 4 has bad contact)
+function simulate(reset) {
+  CARDS.forEach((c, i) => {
+    let v = c.base.map(b => b + (Math.random() - .5) * .18);
+    if (i === 0 && S.state === 'thr') v = [5.1, 5.3, 5.2, 8.62, 4.8, 5.3].map(b => b + (Math.random() - .5) * .08);
+    if (i === 0 && S.state === 'alarm') v = [5.0, 5.2, 4.9, 9.41, 4.6, 5.1].map(b => b + (Math.random() - .5) * .06);
+    S.vals[i] = v;
+    if (reset || !S.hist[i].length) S.hist[i] = Array.from({ length:120 }, (_, k) => 7.3 + Math.sin(k / 9 + i) * .2 + Math.random() * .1);
+    S.hist[i].push(Math.max(...v)); if (S.hist[i].length > 120) S.hist[i].shift();
+  });
+  S.age = Math.round(Math.random() * 4) / 10;
+}
+
+// ------------------------------------------------------------------ rendering
+function plugSvg(vals) {
+  // like the real 12V-2x6 plug: top row the six 12 V pins (measured), bottom row the six ground pins (no sensor sees them)
+  const d = 50, g = 10, pad = 16, lab = 34, w = 6 * d + 5 * g + 2 * pad, h = 2 * d + g + 2 * pad;
+  const latch = css('--plug'), bg = css('--plugBg'), dim = css('--dim'), mono = css('--mono');
+  let s = `<svg viewBox="${-lab - 4} -14 ${w + lab + 8} ${h + 18}">`
+    + `<rect x="${w / 2 - 40}" y="-10" width="80" height="12" rx="3" fill="none" stroke="${latch}" stroke-width="1.5"/>`
+    + `<rect x="0" y="0" width="${w}" height="${h}" rx="${S.theme === 'areko' ? 2 : 10}" fill="${bg}" stroke="${latch}" stroke-width="1.5"/>`
+    + `<text x="-8" y="${pad + d / 2 + 5}" text-anchor="end" font-family="${mono}" font-size="13" fill="${dim}">12V</text>`
+    + `<text x="-8" y="${pad + d + g + d / 2 + 5}" text-anchor="end" font-family="${mono}" font-size="13" fill="${dim}">GND</text>`;
+  vals.forEach((a, i) => {
+    const cx = pad + d / 2 + i * (d + g), cy = pad + d / 2, r = d / 2 - 3;
+    const col = a >= CRIT ? css('--bad') : a >= WARN ? css('--warn') : css('--acc');
+    const f = Math.min(1, a / CRIT), ang = -Math.PI / 2 + f * 2 * Math.PI;
+    const x1 = cx, y1 = cy - r, x2 = cx + r * Math.cos(ang), y2 = cy + r * Math.sin(ang);
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${css('--track')}" stroke-width="5"/>`
+      + (f >= .999 ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${col}" stroke-width="5"/>`
+        : `<path d="M${x1} ${y1} A${r} ${r} 0 ${f > .5 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}" fill="none" stroke="${col}" stroke-width="5"/>`)
+      + `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="${mono}" font-size="14" font-weight="600" fill="${a >= WARN ? col : css('--pinTxt')}">${fmtA(a)}</text>`;
+    const gy = cy + d + g;
+    s += `<circle cx="${cx}" cy="${gy}" r="${r}" fill="none" stroke="${css('--track')}" stroke-width="3" stroke-dasharray="3 4"/>`
+      + `<text x="${cx}" y="${gy + 4}" text-anchor="middle" font-family="${mono}" font-size="12" fill="${dim}">GND</text>`;
+  });
+  return s + '</svg>';
+}
+function histSvg(h) {
+  const W = 400, H = 64, lo = 4, hi = 10, y = v => H - (v - lo) / (hi - lo) * H;
+  const pts = h.map((v, i) => `${(i / (h.length - 1) * W).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`
+    + `<line x1="0" x2="${W}" y1="${y(WARN)}" y2="${y(WARN)}" stroke="${css('--warn')}" stroke-dasharray="4 4" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+    + `<line x1="0" x2="${W}" y1="${y(CRIT)}" y2="${y(CRIT)}" stroke="${css('--bad')}" stroke-dasharray="4 4" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+    + `<polyline points="${pts}" fill="none" stroke="${css('--acc')}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function cardState(i) { return i === 0 ? S.state : 'ok'; }
+function drawCards() {
+  const el = document.getElementById('cards');
+  el.innerHTML = CARDS.slice(0, S.count).map((c, i) => {
+    const v = S.vals[i], st = cardState(i), tot = v.reduce((a, b) => a + b, 0), spread = Math.max(...v) - Math.min(...v);
+    const worst = v.indexOf(Math.max(...v));
+    const lim = st === 'ok' ? c.limit : 400;
+    const banner = st === 'thr' ? tr('bThr', { w:400, p:worst + 1, a:nf(fmtA(v[worst])) })
+      : st === 'alarm' ? tr('bAlarm', { p:worst + 1, a:nf(fmtA(v[worst])) }) : '';
+    return `<div class="card ${st}">
+      <div class="chead"><div><h3>${c.id} · ${c.model}</h3><div class="sub">PCI ${c.bus}</div></div><span class="src">${tr(c.src)}</span></div>
+      <div class="plugwrap">${plugSvg(v)}</div>
+      <div class="stats">
+        <div class="stat"><span>${tr('total')}</span><b>${nf(tot.toFixed(1))} A</b></div>
+        <div class="stat"><span>${tr('power')}</span><b>${Math.round(tot * 12.05)} W</b></div>
+        <div class="stat"><span>${tr('spread')}</span><b class="${spread > 2.5 ? 'bad' : spread > 1.2 ? 'warn' : ''}">${nf(spread.toFixed(2))} A</b></div>
+        <div class="stat"><span>${tr('limit')}</span><b class="${st === 'ok' ? '' : 'warn'}">${lim} W</b></div>
+      </div>
+      <div class="histo"><div class="lbl"><span>${tr('hist')}</span><span>${nf(WARN)} / ${nf(CRIT)} A</span></div>${histSvg(S.hist[i])}</div>
+      <div class="banner"><span class="grow">${banner}</span><button class="btn">${tr('release')}</button></div>
+    </div>`;
+  }).join('');
+  document.getElementById('lastRead').textContent = tr('last', { s:nf(S.age) });
+}
+function trayIcon() {
+  const col = S.state === 'alarm' ? css('--bad') : S.state === 'thr' ? css('--warn') : css('--ok');
+  const el = document.getElementById('trayIco');
+  el.innerHTML = `<svg viewBox="0 0 32 32" fill="none" stroke="${col}" stroke-width="2.4"><rect x="4" y="9" width="24" height="14" rx="2"/>`
+    + `<circle cx="10" cy="16" r="2"/><circle cx="16" cy="16" r="2"/><circle cx="22" cy="16" r="2"/></svg>`;
+  el.style.animation = S.state === 'ok' ? '' : 'blink 1s steps(2) infinite';
+}
+function drawStatic() {
+  document.documentElement.dataset.theme = S.theme;
+  document.documentElement.lang = S.lang;
+  document.querySelectorAll('[data-t]').forEach(e => { e.textContent = tr(e.dataset.t); });
+  const pill = document.getElementById('pill');
+  pill.className = 'pill ' + S.state;
+  document.getElementById('pillT').textContent = tr(S.state);
+  document.getElementById('svc').textContent = tr('svc', { hz:2, n:S.count });
+  document.getElementById('actSel').innerHTML = tr('acts').map(a => `<option>${a}</option>`).join('');
+  // detected sources
+  const devs = [['srcCard', 'ROG Astral RTX 5090 OC · 02:00.0 · IT8915FN', true], ['srcWv', 'WireView Pro II · COM / ttyACM0 · FW 03', S.count >= 2],
+                ['srcPsu', 'MPG Ai1600TS · ' + (S.count >= 3 ? 'GPU 2' : '—'), S.count >= 3], ['srcCard', 'ROG Astral LC RTX 5090 · 06:00.0 · IT8915FN', S.count >= 4]]
+    .filter((d, i) => i < 3 || d[2]);
+  document.getElementById('devs').innerHTML = devs.map(([k, d, on]) =>
+    `<div class="dev"><span class="dot ${on ? '' : 'off'}"></span><span class="grow">${tr(k)}<br><small>${d}</small></span><small>${tr(on ? 'found' : 'notFound')}</small></div>`).join('');
+  // events
+  const ev = [['21:31:04', 'i', tr('eStart')], ['21:31:04', 'i', tr('eFound', { s:tr('srcCard') })]];
+  if (S.count >= 2) ev.push(['21:31:05', 'i', tr('eFound', { s:tr('srcWv') })]);
+  if (S.count >= 3) ev.push(['21:31:05', 'i', tr('eFound', { s:tr('srcPsu') })]);
+  if (S.state !== 'ok') ev.push(['21:46:52', 'w', 'GPU 0 · ' + tr('eThr', { w:400, p:4, a:nf('8.62') })]);
+  if (S.state === 'alarm') ev.push(['21:46:56', 'b', 'GPU 0 · ' + tr('eAlarm', { p:4, a:nf('9.41') })]);
+  if (S.state === 'ok') ev.push(['20:12:40', 'w', 'GPU 0 · ' + tr('eThr', { w:400, p:2, a:nf('8.55') })], ['20:14:02', 'i', 'GPU 0 · ' + tr('eRel', { w:600 })]);
+  document.getElementById('evt').innerHTML = ev.reverse().map(([t, l, m]) =>
+    `<tr><td class="t">${t}</td><td class="k"><span class="lvl ${l}">${l === 'b' ? tr('alarm') : l === 'w' ? tr('thr') : 'INFO'}</span></td><td>${m}</td></tr>`).join('');
+  // toast
+  const toast = document.getElementById('toast');
+  toast.className = 'toast' + (S.state === 'ok' ? '' : ' show' + (S.state === 'alarm' ? ' alarm' : ''));
+  document.getElementById('toastT').textContent = S.state === 'alarm' ? tr('tAlarm') : tr('tThr');
+  document.getElementById('toastP').textContent = S.state === 'alarm' ? 'GPU 0 · ' + tr('bAlarm', { p:4, a:nf('9.41') })
+    : 'GPU 0 · ' + tr('bThr', { w:400, p:4, a:nf('8.62') });
+  trayIcon();
+}
+function applyAll() { drawToolbar(); drawStatic(); drawCards(); }
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + b.dataset.p));
+});
+document.querySelectorAll('input[type=range]').forEach(r => r.addEventListener('input', () => {
+  document.getElementById(r.dataset.v).textContent = nf(Number(r.value).toFixed(1)) + ' A';
+}));
+document.querySelectorAll('.sw').forEach(s => s.addEventListener('click', () => s.classList.toggle('on')));
+setInterval(() => { const d = new Date(); document.getElementById('clock').textContent = d.toTimeString().slice(0, 5); }, 1000);
+simulate(true); applyAll();
+setInterval(() => { simulate(false); drawCards(); }, 500);
+</script>
+</body>
+</html>

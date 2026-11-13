@@ -1,0 +1,13 @@
+[package]
+name = "gpw-core"
+description = "Areko GPUPinWatch core: data model, protection policy, config, IPC contract, protocol decoders (no I/O)"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+thiserror.workspace = true

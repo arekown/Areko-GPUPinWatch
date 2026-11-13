@@ -1,0 +1,18 @@
+[workspace]
+resolver = "2"
+members = ["crates/gpw-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE.md"
+authors = ["Areko"]
+repository = "https://github.com/arekown/Areko-GPUPinWatch"
+
+[workspace.dependencies]
+gpw-core = { path = "crates/gpw-core" }
+gpw-sources = { path = "crates/gpw-sources" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"
