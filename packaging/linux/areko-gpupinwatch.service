@@ -1,0 +1,16 @@
+[Unit]
+Description=Areko GPUPinWatch (12V-2x6 pin current guard)
+After=systemd-modules-load.service nvidia-persistenced.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/areko-gpupinwatchd
+RuntimeDirectory=areko-gpupinwatch
+RuntimeDirectoryPreserve=yes
+ConfigurationDirectory=areko-gpupinwatch
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
