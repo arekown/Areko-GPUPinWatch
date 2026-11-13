@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/gpw-core"]
+members = ["crates/gpw-core", "crates/gpw-sources", "crates/gpw-daemon"]
 
 [workspace.package]
 version = "0.1.0"

@@ -19,6 +19,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpw-daemon"
+version = "0.1.0"
+dependencies = [
+ "gpw-core",
+ "gpw-sources",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "gpw-sources"
+version = "0.1.0"
+dependencies = [
+ "gpw-core",
+ "thiserror",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

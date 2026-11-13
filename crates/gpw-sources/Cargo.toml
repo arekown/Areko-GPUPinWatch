@@ -1,0 +1,12 @@
+[package]
+name = "gpw-sources"
+description = "Areko GPUPinWatch device access: ASUS IT8915FN (i2c-dev / NVAPI), WireView Pro II (serial), MSI Ai-TS PSU (HID)"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+authors.workspace = true
+
+# crate-specific dependencies go here (not into the workspace root)
+[dependencies]
+gpw-core.workspace = true
+thiserror.workspace = true
