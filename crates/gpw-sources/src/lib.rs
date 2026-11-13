@@ -45,3 +45,45 @@ pub fn discover(gpus: &[GpuInfo]) -> Vec<Box<dyn PinSource>> {
     v.extend(msipsu::discover());
     v
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn allow_lists_refuse_everything_but_reads() {
+        for cmd in [0x01, 0x02, 0x04] {
+            assert_eq!(wireview::wv_command(cmd).unwrap(), [cmd]);
+        }
+        for cmd in [0x00, 0x03, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0B, 0x0C, 0x0E, 0xF0, 0xF1, 0xF2, 0xFF] {
+            assert!(wireview::wv_command(cmd).is_err(), "wireview {cmd:#04x}");
+        }
+        assert_eq!(&msipsu::msi_command([0xFA, 0x51]).unwrap()[..3], &[0xFA, 0x51, 0]);
+        for reg in gpw_core::parse::MSI_REGS_ALLOWED {
+            assert_eq!(&msipsu::msi_command([0x51, reg]).unwrap()[..3], &[0x51, reg, 0]);
+        }
+        for cmd in [[0x50, 0xE0], [0x50, 0x10], [0x51, 0xF1], [0x51, 0xC2], [0xF1, 0x00], [0xFA, 0x50], [0x00, 0x00]] {
+            assert!(msipsu::msi_command(cmd).is_err(), "msi {cmd:02x?}");
+        }
+    }
+
+    /// Real hardware: run with `cargo test -p gpw-sources -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn discover_prints_sources() {
+        let mut sources = discover(&[]);
+        for s in sources.iter_mut() {
+            println!("{} | {} | {}", s.info().id, s.info().label, s.info().detail);
+            match s.read() {
+                Ok(r) => {
+                    let amps: Vec<String> = r.pins.iter().map(|p| format!("{:.2}", p.amps)).collect();
+                    let volts: Vec<String> = r.pins.iter().map(|p| format!("{:.2}", p.volts.unwrap_or(0.0))).collect();
+                    println!("  A: {}  V: {}", amps.join(" "), volts.join(" "));
+                }
+                Err(e) => println!("  error: {e}"),
+            }
+        }
+        let astral = sources.iter().filter(|s| s.info().kind == gpw_core::model::SourceKind::AstralChip).count();
+        println!("astral sources: {astral}");
+    }
+}
