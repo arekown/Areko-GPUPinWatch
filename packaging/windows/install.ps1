@@ -37,7 +37,11 @@ Stop-Old
 New-Item -ItemType Directory -Force -Path $dest | Out-Null
 Copy-Item (Join-Path $PSScriptRoot 'areko-gpupinwatchd.exe') $dest -Force
 $hasApp = Test-Path (Join-Path $PSScriptRoot 'areko-gpupinwatch.exe')
-if ($hasApp) { Copy-Item (Join-Path $PSScriptRoot 'areko-gpupinwatch.exe') $dest -Force }
+if ($hasApp) {
+    Copy-Item (Join-Path $PSScriptRoot 'areko-gpupinwatch.exe') $dest -Force
+    # the window needs the WebView2 loader next to it (WebView2 itself is part of Windows 10/11)
+    Copy-Item (Join-Path $PSScriptRoot 'WebView2Loader.dll') $dest -Force
+}
 Copy-Item (Join-Path $PSScriptRoot 'LICENSE.md') $dest -Force -ErrorAction SilentlyContinue
 
 & $svc install
