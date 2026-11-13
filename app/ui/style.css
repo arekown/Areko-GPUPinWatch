@@ -1,3 +1,9 @@
+/* bundled fonts (SIL OFL 1.1, licences in ui/fonts/) – no internet needed */
+@font-face { font-family:'Orbitron'; src:url('fonts/Orbitron.ttf') format('truetype'); font-weight:400 900; }
+@font-face { font-family:'Share Tech Mono'; src:url('fonts/ShareTechMono-Regular.ttf') format('truetype'); }
+@font-face { font-family:'Rajdhani'; src:url('fonts/Rajdhani-Medium.ttf') format('truetype'); font-weight:500; }
+@font-face { font-family:'Rajdhani'; src:url('fonts/Rajdhani-SemiBold.ttf') format('truetype'); font-weight:600; }
+@font-face { font-family:'Rajdhani'; src:url('fonts/Rajdhani-Bold.ttf') format('truetype'); font-weight:700; }
 /* Areko GPUPinWatch – styles of the accepted draft (entwurf/gpupinwatch-entwurf.html) without the draft-only parts
    (toolbar, mocked taskbar and toast); the window fills the app window. */
 
@@ -89,6 +95,7 @@ body { min-height:100vh; }
   letter-spacing:var(--ls); text-transform:var(--case); }
 [data-theme="areko"] .btn, [data-theme="areko"] .banner { border-radius:0; }
 .card.alarm .btn { display:none; }
+.card.alarm.alarmonly .btn { display:inline-block; }
 .foot { margin-top:14px; font:12px var(--mono); color:var(--dim); display:flex; justify-content:space-between; }
 
 /* ------------------------------------------------------------------ settings */

@@ -13,6 +13,7 @@ use tauri::{AppHandle, Wry};
 /// White plug symbol on transparent background, rendered from icons/tray.svg.
 const MASK_PNG: &[u8] = include_bytes!("../icons/tray.png");
 const MENU_OPEN: &str = "open";
+const MENU_QUIT: &str = "quit";
 
 /// ok / warn / bad / dim per theme (same values as the CSS tokens in ui/style.css).
 fn colour(theme: &str, st: Option<TrayState>) -> [u8; 3] {
@@ -50,6 +51,7 @@ struct Inner {
 pub struct Tray {
     icon: TrayIcon<Wry>,
     item: MenuItem<Wry>,
+    quit: MenuItem<Wry>,
     mask: Arc<(Vec<u8>, u32, u32)>,
     inner: Arc<Mutex<Inner>>,
 }
@@ -59,7 +61,8 @@ impl Tray {
         let m = Image::from_bytes(MASK_PNG)?;
         let mask = Arc::new((m.rgba().to_vec(), m.width(), m.height()));
         let item = MenuItem::with_id(app, MENU_OPEN, "Areko GPUPinWatch", true, None::<&str>)?;
-        let menu = Menu::with_items(app, &[&item])?;
+        let quit = MenuItem::with_id(app, MENU_QUIT, "Quit", true, None::<&str>)?;
+        let menu = Menu::with_items(app, &[&item, &quit])?;
         let first = Look { rgb: colour("areko", None), faded: false };
         let icon = TrayIconBuilder::with_id("main")
             .icon(tint(&mask, first))
@@ -69,6 +72,8 @@ impl Tray {
             .on_menu_event(move |app, e| {
                 if e.id() == MENU_OPEN {
                     on_open(app);
+                } else if e.id() == MENU_QUIT {
+                    app.exit(0);
                 }
             })
             .on_tray_icon_event(move |tray, e| {
@@ -80,6 +85,7 @@ impl Tray {
         let tray = Tray {
             icon,
             item,
+            quit,
             mask,
             inner: Arc::new(Mutex::new(Inner {
                 theme: "areko".into(),
@@ -95,6 +101,11 @@ impl Tray {
             t.tick();
         });
         Ok(tray)
+    }
+
+    /// Translated label of the "Quit" menu entry.
+    pub fn set_quit_text(&self, text: &str) {
+        let _ = self.quit.set_text(text);
     }
 
     /// New service state (`None` = not connected), theme from the service config, translated line.

@@ -25,6 +25,8 @@ const fmtA = v => v.toFixed(2);
 const nf = v => { const l = lang(); return l === 'de' || l === 'it' || l === 'es' || l === 'pt' ? String(v).replace('.', ',') : String(v); };
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const cfg = () => S.snap && S.snap.config;
+// stage 2 set to "alarm only": no shutdown, the card can be released from the window
+const alarmOnly = () => !!(cfg() && cfg().stage2.action === 'alarm_only');
 const warnA = () => cfg() ? cfg().stage1.warn_a : 8.5;
 const critA = () => cfg() ? cfg().stage2.crit_a : 9.2;
 
@@ -61,7 +63,7 @@ function plugSvg(vals) {
 }
 function histSvg(h) {
   const WARN = warnA(), CRIT = critA();
-  const W = 400, H = 64, lo = 4, hi = 10, y = v => H - (v - lo) / (hi - lo) * H;
+  const W = 400, H = 64, lo = 0, hi = 10, y = v => H - (v - lo) / (hi - lo) * H;
   const pts = h.length < 2 ? '' : h.map((v, i) => `${(i / (h.length - 1) * W).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`
     + `<line x1="0" x2="${W}" y1="${y(WARN)}" y2="${y(WARN)}" stroke="${css('--warn')}" stroke-dasharray="4 4" stroke-width="1" vector-effect="non-scaling-stroke"/>`
@@ -69,7 +71,8 @@ function histSvg(h) {
     + `<polyline points="${pts}" fill="none" stroke="${css('--acc')}" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>`;
 }
 
-const cardTitle = c => c.gpu_name || c.source_label;
+// on-card sensor: the board name (e.g. ROG Astral RTX 5090 OC); external sources: the GPU they feed
+const cardTitle = c => (c.source_kind === 'astral_chip' && c.source_label) || c.gpu_name || c.source_label;
 const gpuName = pci => { const c = S.snap && S.snap.cards.find(x => x.gpu_pci === pci); return (c && c.gpu_name) || pci; };
 const shortPci = p => p.replace(/^0000:/, '');
 
@@ -84,7 +87,7 @@ function cardSkeleton(id) {
 // Card elements stay in place between snapshots so the alarm pulse runs on and "Release" stays clickable.
 function fillCard(el, c) {
   const st = PHASE[c.phase] || 'ok', v = c.amps;
-  const cls = 'card ' + st;
+  const cls = 'card ' + st + (st === 'alarm' && alarmOnly() ? ' alarmonly' : '');
   if (el.className !== cls) el.className = cls;
   el.querySelector('h3').textContent = cardTitle(c);
   el.querySelector('.sub').textContent = c.binding === 'matching' ? tr('matching') : c.gpu_pci ? 'PCI ' + shortPci(c.gpu_pci) : '';
@@ -106,7 +109,7 @@ function fillCard(el, c) {
   if (st !== 'ok') {
     const [pin, amps] = c.trigger || [v ? v.indexOf(Math.max(...v)) : 0, v ? Math.max(...v) : 0];
     const a = nf(fmtA(amps)), p = pin + 1;
-    banner = st === 'thr' ? tr('bThr', { w:c.limit_w != null ? Math.round(c.limit_w) : '—', p, a }) : tr('bAlarm', { p, a });
+    banner = st === 'thr' ? tr('bThr', { w:c.limit_w != null ? Math.round(c.limit_w) : '—', p, a }) : tr(alarmOnly() ? 'bAlarmOnly' : 'bAlarm', { p, a });
   }
   el.querySelector('.banner .grow').textContent = banner;
   const btn = el.querySelector('.btn');
@@ -161,7 +164,7 @@ function evText(k) {
     case 'matched': return tr('eMatched', { s:k.label, g:gpuName(k.gpu) });
     case 'throttled': return tr('eThr', { w:Math.round(k.target_w), p:k.pin + 1, a:nf(fmtA(k.amps)) });
     case 'released': return tr('eRel', { w:Math.round(k.limit_w) });
-    case 'alarm': return tr('eAlarm', { p:k.pin + 1, a:nf(fmtA(k.amps)) });
+    case 'alarm': return tr(k.shutdown ? 'eAlarm' : 'eAlarmOnly', { p:k.pin + 1, a:nf(fmtA(k.amps)) });
     case 'error': return tr('eError', { m:k.message });
     default: return k.event;
   }
@@ -245,15 +248,22 @@ function applyLook() {
   document.querySelectorAll('[data-t]').forEach(e => { e.textContent = tr(e.dataset.t); });
   drawLookSelects();
   drawSettings(true);
-  if (S.textsLang !== lang()) {
-    S.textsLang = lang();
-    const texts = { dec:nf('1.5').charAt(1) };
-    for (const k of ['tThr', 'tAlarm', 'bThr', 'bAlarm', 'ok', 'thr', 'alarm', 'noService', 'noCards']) texts[k] = tr(k);
-    invoke('set_texts', { texts }).catch(e => console.error('set_texts:', e));
-  }
+  syncTexts();
   render();
 }
+// Templates for notifications and the tray (Rust side); follow language and the stage 2 action.
+function syncTexts() {
+  const key = lang() + (alarmOnly() ? '/alarm_only' : '/shutdown');
+  if (S.textsLang === key) return;
+  S.textsLang = key;
+  const texts = { dec:nf('1.5').charAt(1) };
+  for (const k of ['tThr', 'bThr', 'ok', 'thr', 'alarm', 'noService', 'noCards', 'quit']) texts[k] = tr(k);
+  texts.tAlarm = tr(alarmOnly() ? 'tAlarmOnly' : 'tAlarm');
+  texts.bAlarm = tr(alarmOnly() ? 'bAlarmOnly' : 'bAlarm');
+  invoke('set_texts', { texts }).catch(e => console.error('set_texts:', e));
+}
 function render() {
+  syncTexts();
   drawHead();
   drawCards();
   drawSources();

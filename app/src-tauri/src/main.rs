@@ -125,6 +125,9 @@ fn get_state(state: tauri::State<'_, AppState>) -> StateView {
 #[tauri::command]
 fn set_texts(app: AppHandle, texts: HashMap<String, String>) {
     let st = app.state::<AppState>();
+    if let (Some(q), Some(t)) = (texts.get("quit"), st.tray.lock().unwrap().clone()) {
+        t.set_quit_text(q);
+    }
     *st.texts.lock().unwrap() = Texts(texts);
     let last = st.last.lock().unwrap().clone();
     refresh_tray(&app, last.as_ref());
