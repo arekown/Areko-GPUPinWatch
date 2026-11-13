@@ -91,10 +91,8 @@ fn run(args: Args, stop: Arc<AtomicBool>) -> Result<(), String> {
     }
     let control: Box<dyn GpuControl> = match nvml::NvmlControl::new() {
         Ok(c) => Box::new(c),
-        Err(e) => {
-            log(&format!("{e} – überwache ohne Drosseln"));
-            Box::new(NoGpu(e))
-        }
+        // reported once, as an event (shown in the app's event list and in this log)
+        Err(e) => Box::new(NoGpu(e)),
     };
     let opts = Options { probe: args.probe, state_dir, config_path, warn_a: args.warn, crit_a: args.crit };
     let mut guard =
