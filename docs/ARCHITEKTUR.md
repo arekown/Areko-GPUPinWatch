@@ -13,7 +13,7 @@ app/                Fenster „Areko GPUPinWatch“ (Tauri 2, HTML/CSS/JS aus de
 
 - Pro Quelle/Aufgabe ein Modul; OS-Teile in `linux.rs`/`windows.rs` mit `#[cfg(target_os = …)]`.
 - Geräten wird **nur** gesendet, was `docs/PROTOKOLLE.md` erlaubt (Erlaubtliste im Code, alles andere abweisen).
-- Kein fremder Code, nur Protokollfakten. Abhängigkeiten nur mit MIT/Apache/BSD/Zlib-artiger Lizenz.
+- Kein fremder Code, nur Protokollfakten. Abhängigkeiten nur mit MIT/Apache/BSD/ISC/Zlib-artiger Lizenz; MPL-2.0 nur unverändert als Abhängigkeit (z. B. `serialport`).
 - Kommentare englisch, Oberflächentexte über die Übersetzungstabelle (7 Sprachen).
 - Tests nur für Logik, die still kaputtgehen kann (Decoder, Schutzlogik, Zuordnung, IPC).
 
