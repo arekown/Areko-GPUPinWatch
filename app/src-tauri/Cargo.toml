@@ -1,0 +1,24 @@
+[package]
+name = "gpupinwatch-app"
+description = "Areko GPUPinWatch window: overview, settings, events, tray icon, desktop alarm (IPC client of the service)"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "areko-gpupinwatch"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+# crate-specific dependencies go here (not into the workspace root)
+[dependencies]
+gpw-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2", features = ["tray-icon", "image-png"] }
+tauri-plugin-notification = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-opener = "2"
