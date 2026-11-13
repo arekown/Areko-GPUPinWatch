@@ -72,13 +72,11 @@ Ground pins (GND) are never measured by any of these sensors.
 ### Windows 10 / 11
 
 1. Download `Areko-GPUPinWatch-<version>-windows-x64.zip` from [Releases](../../releases) and unpack it.
-2. Open **PowerShell as administrator** in that folder and run
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\install.ps1
-   ```
+2. Double-click **`install.cmd`** (Windows asks for administrator rights). Alternatively, in an administrator PowerShell:
+   `powershell -ExecutionPolicy Bypass -File .\install.ps1`
    This copies everything to `C:\Program Files\Areko GPUPinWatch`, installs and starts the service
    **Areko GPUPinWatch** (starts with Windows) and adds the window to the Start menu.
-3. Remove again: `powershell -ExecutionPolicy Bypass -File .\install.ps1 -Uninstall`
+3. Remove again: double-click **`uninstall.cmd`**.
 
 The files are not signed yet – SmartScreen may ask once ("More info" → "Run anyway").
 Settings: `%ProgramData%\Areko GPUPinWatch\config.toml`.

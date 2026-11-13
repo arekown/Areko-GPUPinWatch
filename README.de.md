@@ -73,13 +73,11 @@ Masse-Pins (GND) misst keiner dieser Sensoren.
 ### Windows 10 / 11
 
 1. `Areko-GPUPinWatch-<version>-windows-x64.zip` unter [Releases](../../releases) laden und entpacken.
-2. In dem Ordner **PowerShell als Administrator** öffnen und ausführen:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\install.ps1
-   ```
+2. Doppelklick auf **`install.cmd`** (Windows fragt nach Administratorrechten). Oder in einer Admin-PowerShell:
+   `powershell -ExecutionPolicy Bypass -File .\install.ps1`
    Das kopiert alles nach `C:\Program Files\Areko GPUPinWatch`, richtet den Dienst **Areko GPUPinWatch** ein
    (startet mit Windows) und legt das Fenster ins Startmenü.
-3. Entfernen: `powershell -ExecutionPolicy Bypass -File .\install.ps1 -Uninstall`
+3. Entfernen: Doppelklick auf **`uninstall.cmd`**.
 
 Die Dateien sind noch nicht signiert – SmartScreen fragt evtl. einmal („Weitere Informationen“ → „Trotzdem ausführen“).
 Einstellungen: `%ProgramData%\Areko GPUPinWatch\config.toml`.
